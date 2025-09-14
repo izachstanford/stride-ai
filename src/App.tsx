@@ -65,8 +65,8 @@ function App() {
     const loadData = async () => {
       try {
         const [activitiesResponse, racesResponse] = await Promise.all([
-          fetch('/data/activities_mapped.json'),
-          fetch('/data/races_normalized.json')
+          fetch(`${process.env.PUBLIC_URL}/data/activities_mapped.json`),
+          fetch(`${process.env.PUBLIC_URL}/data/races_normalized.json`)
         ]);
 
         const activities = await activitiesResponse.json();

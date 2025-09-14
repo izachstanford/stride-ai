@@ -1,6 +1,7 @@
 {
   "name": "stride-ai-app",
   "version": "0.1.0",
+  "homepage": "/stride-ai",
   "private": true,
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -26,7 +27,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "node deploy-to-website.js",
+    "deploy:dry": "echo 'Dry run - would deploy to aiwithzach.com/stride-ai/' && npm run build"
   },
   "eslintConfig": {
     "extends": [
@@ -50,5 +53,8 @@
     "nth-check": "^2.1.1",
     "postcss": "^8.4.31",
     "webpack-dev-server": "^4.15.1"
+  },
+  "devDependencies": {
+    "fs-extra": "^11.3.1"
   }
 }
