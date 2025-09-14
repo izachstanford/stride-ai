@@ -185,19 +185,11 @@ const BibBook: React.FC<BibBookProps> = ({ data }) => {
 
   return (
     <div className="bib-book">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ color: '#ff9500', fontSize: '2rem', marginBottom: '0.5rem', fontWeight: '700' }}>
-          📖 Bib Book
-        </h1>
-        <p style={{ color: '#888', fontSize: '1.1rem', lineHeight: '1.5' }}>
-          Just an amateur runner pretending local races are the Olympics
-        </p>
-      </div>
 
       {/* Key Statistics Grid */}
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '1.5rem', fontWeight: '600' }}>
-          🏆 Racing Career Overview
+          Racing Overview
         </h2>
         
         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
@@ -361,7 +353,7 @@ const BibBook: React.FC<BibBookProps> = ({ data }) => {
       {(raceStats.overallPodiumRaces.length > 0 || raceStats.agGroupPodiumRaces.length > 0) && (
         <div style={{ marginBottom: '3rem' }}>
           <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '1.5rem', fontWeight: '600' }}>
-            🥇 Podium Achievements
+            Podium Achievements
           </h2>
           
           {raceStats.overallPodiumRaces.length > 0 && (
@@ -420,7 +412,7 @@ const BibBook: React.FC<BibBookProps> = ({ data }) => {
       <div style={{ marginBottom: '3rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ color: '#ff9500', fontSize: '1.5rem', margin: 0, fontWeight: '600' }}>
-            📋 Complete Race History
+            Complete Race History
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <label style={{ color: '#ccc', fontSize: '0.9rem' }}>Filter by distance:</label>

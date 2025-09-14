@@ -247,7 +247,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
       {/* Running Section */}
       <div style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '1rem', fontWeight: '600' }}>
-          🏃‍♂️ Running Stats
+          Running Stats
         </h2>
         
         <div className="stats-grid">
@@ -321,7 +321,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
       {/* General Fitness Section */}
       <div>
         <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '1rem', fontWeight: '600' }}>
-          🏋️‍♂️ Overall Fitness
+          Overall Fitness
         </h2>
         
         <div className="stats-grid">
@@ -404,7 +404,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
       {/* Personal Records Section */}
       <div style={{ marginTop: '3rem' }}>
         <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '2rem', fontWeight: '600' }}>
-          🏆 Lifetime Personal Records
+          Lifetime Personal Records
         </h2>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>

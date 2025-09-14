@@ -166,10 +166,10 @@ const PerformanceLab: React.FC<PerformanceLabProps> = ({ data }) => {
     <div className="performance-lab">
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ color: '#ff9500', fontSize: '2rem', marginBottom: '0.5rem', fontWeight: '700' }}>
-          🧪 Performance Lab
+          Performance Lab
         </h1>
         <p style={{ color: '#888', fontSize: '1.1rem', lineHeight: '1.5' }}>
-          Deep insights and analytics to track and improve running performance
+          Insights and analytics to track and improve running performance
         </p>
       </div>
 
@@ -177,7 +177,7 @@ const PerformanceLab: React.FC<PerformanceLabProps> = ({ data }) => {
       <div className="analysis-section" style={{ marginBottom: '3rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ color: '#ff9500', fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
-            📈 Race Progression Analysis
+            Race Progression Analysis
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <label style={{ color: '#ccc', fontSize: '0.9rem' }}>Distance:</label>
