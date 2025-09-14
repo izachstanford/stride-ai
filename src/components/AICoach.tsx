@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppData } from '../App';
 import emailjs from '@emailjs/browser';
 import { format, addDays, startOfWeek } from 'date-fns';
+import TrainingSummaryChart from './TrainingSummaryChart';
 
 // TypeScript declarations for Google API
 declare global {
@@ -255,11 +256,28 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
     }
 
     setIsAnalyzing(true);
-    addMessage('system', 'Analyzing your recent training data and generating a personalized 7-day plan...');
+    addMessage('system', 'Fetching your recent training data...');
 
     try {
-      // Fetch recent Strava data
+      // Fetch recent Strava data first
       const recentData = await fetchRecentActivities();
+      
+      // Show training summary chart
+      if (recentData.length > 0) {
+        addMessage('system', '📊 Here\'s your training summary for the last 4 weeks:');
+        // Add training summary as a special message type
+        const summaryMessage: ChatMessage = {
+          id: Date.now().toString(),
+          type: 'system',
+          content: 'training-summary-chart',
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, summaryMessage]);
+      } else {
+        addMessage('system', 'ℹ️ No recent running activities found in the last 4 weeks. Generating plan based on historical data and your input.');
+      }
+
+      addMessage('system', 'Analyzing your data and generating a personalized 7-day plan...');
       
       // Prepare comprehensive data for AI analysis
       const analysisData = {
@@ -297,67 +315,114 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
   };
 
   const callAnthropicAPI = async (analysisData: any): Promise<TrainingPlan | null> => {
+    if (!ANTHROPIC_API_KEY) {
+      addMessage('system', '⚠️ Anthropic API key not configured. Please check your environment variables.');
+      return null;
+    }
+
     try {
-      addMessage('system', '🤖 Calling AI to analyze your data...');
+      addMessage('system', '🤖 Analyzing your data with AI...');
       
-      const prompt = `You are a world-class marathon coach analyzing training data to create a 7-day training plan. You are research-driven, cite current best practices, balance injury prevention with performance, are conservative when recent load or injury risk is high, and are friendly, direct, and prescriptive.
+      // Prepare the prompt for analysis
+      const prompt = `You are an expert running coach. Analyze the following data and create a personalized 7-day training plan.
 
-ATHLETE DATA:
-- Recent 4-week activities: ${JSON.stringify(analysisData.recent_activities.slice(0, 20))}
-- Historical race performances: ${JSON.stringify(analysisData.historical_races.slice(-10))}
-- User goals: ${analysisData.user_goals || 'No specific goals mentioned'}
-- Constraints: ${analysisData.constraints || 'No constraints mentioned'}
+Recent Activities Data:
+${JSON.stringify(analysisData.recent_activities, null, 2)}
 
-ANALYSIS REQUIREMENTS:
-1. Calculate recent training load, weekly mileage trends, and intensity distribution
-2. Assess injury risk factors from recent activity patterns
-3. Identify strengths and limiters from race history
-4. Create a balanced 7-day plan that progresses appropriately
+User Goals: ${analysisData.user_goals}
+Constraints: ${analysisData.constraints}
 
-RESPONSE FORMAT (JSON):
+Please return a detailed JSON training plan with this exact structure:
 {
   "plan": {
-    "week_overview": "2-3 sentence summary of the week's focus",
+    "week_overview": "Brief overview of the week's focus and approach",
     "daily_schedule": [
       {
         "day": "Monday",
-        "workout_type": "Easy Run / Rest / Workout / Long Run",
-        "description": "Detailed workout description with paces/effort",
+        "workout_type": "Easy Run",
+        "description": "Detailed workout description",
         "duration_minutes": 45,
         "distance_miles": 6,
-        "intensity": "Easy / Moderate / Hard",
-        "notes": "Additional guidance or form cues"
+        "intensity": "Easy",
+        "notes": "Additional notes"
       }
-      // ... 7 days total
+      // ... for all 7 days
     ],
-    "key_sessions": ["Most important 2-3 workouts of the week"],
-    "recovery_emphasis": "Recovery strategies for this week",
-    "injury_prevention": ["2-3 specific injury prevention recommendations"]
+    "key_sessions": ["List of key workout sessions for the week"],
+    "recovery_emphasis": "Recovery guidance",
+    "injury_prevention": ["List of injury prevention tips"]
   },
   "reasoning": {
-    "analysis_summary": "Key insights from recent training data",
-    "training_load_assessment": "Assessment of current fitness and fatigue",
+    "analysis_summary": "Summary of the athlete's current state",
+    "training_load_assessment": "Assessment of recent training load",
     "goal_alignment": "How this plan aligns with stated goals",
-    "risk_factors": ["Identified injury or overtraining risks"],
-    "scientific_principles": ["Training principles being applied"],
-    "adaptation_strategy": "How this week fits into longer-term development"
+    "risk_factors": ["List of potential risk factors"],
+    "scientific_principles": ["Training principles applied"],
+    "adaptation_strategy": "How this plan promotes adaptation"
   }
 }
 
-Focus on practical, actionable guidance. Be specific with paces when possible but provide effort-based alternatives.`;
+Focus on practical, evidence-based training principles. Consider the athlete's recent training load, goals, and constraints.`;
 
-      addMessage('system', '📡 Sending request to AI...');
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 4000,
+          messages: [{
+            role: 'user',
+            content: prompt
+          }]
+        })
+      });
 
-      // Note: Direct browser calls to Anthropic API are blocked by CORS
-      // This is a limitation of client-side only applications
-      addMessage('system', '⚠️ Direct API calls from browser are blocked by CORS policy. Using fallback plan...');
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Anthropic API error:', errorData);
+        addMessage('system', '❌ AI service error. Using fallback plan.');
+        return null;
+      }
+
+      const data = await response.json();
+      const content = data.content?.[0]?.text;
       
-      // For now, we'll use a fallback plan since direct API calls don't work
-      // In production, you'd need a backend proxy server
-      return null;
+      if (!content) {
+        addMessage('system', '❌ No content received from AI. Using fallback plan.');
+        return null;
+      }
+
+      // Parse the JSON response
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}') + 1;
+      const jsonStr = content.slice(jsonStart, jsonEnd);
+      
+      const planData = JSON.parse(jsonStr);
+      
+      // Create full plan object
+      const plan: TrainingPlan = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        athlete_id: analysisData.athlete_profile?.id || 0,
+        plan: planData.plan,
+        reasoning: planData.reasoning,
+        input_data: {
+          recent_activities: analysisData.recent_activities,
+          user_goals: analysisData.user_goals,
+          constraints: analysisData.constraints
+        }
+      };
+
+      addMessage('system', '✅ AI analysis complete! Generated personalized plan.');
+      return plan;
+
     } catch (error) {
       console.error('Anthropic API error:', error);
-      addMessage('system', `❌ Error calling AI: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      addMessage('system', '❌ AI service error. Using fallback plan.');
       return null;
     }
   };
@@ -925,6 +990,8 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
               <div className="message-content">
                 {message.type === 'plan' && message.plan ? (
                   renderPlan(message.plan)
+                ) : message.content === 'training-summary-chart' ? (
+                  <TrainingSummaryChart activities={recentActivities} />
                 ) : (
                   <p>{message.content}</p>
                 )}

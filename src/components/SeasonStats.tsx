@@ -554,7 +554,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
       {/* Running Performance Section */}
       <div>
         <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '2rem', fontWeight: '600' }}>
-          🏃‍♂️ Running Performance
+          Running Performance
         </h2>
         
         {/* 1. Volume Metrics */}
@@ -730,7 +730,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
       {/* Overall Fitness Section */}
       <div style={{ marginTop: '3rem' }}>
         <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '1rem', fontWeight: '600' }}>
-          🏋️‍♂️ Overall Fitness
+          Overall Fitness
         </h2>
         
         <div className="stats-grid">
@@ -774,7 +774,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
       {yearRaces.length > 0 && (
         <div style={{ marginTop: '3rem' }}>
           <h2 style={{ color: '#ff9500', fontSize: '1.5rem', marginBottom: '1rem', fontWeight: '600' }}>
-            📋 {selectedYear} Race History
+            {selectedYear} Race History
           </h2>
           
           {/* Race Filter */}
