@@ -124,54 +124,44 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
     try {
       addMessage('system', 'Authenticating with Strava...');
       
-      // Exchange code for access token
-      const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
+      // Use Netlify function for token exchange
+      const response = await fetch('/.netlify/functions/strava-token-exchange', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          client_id: STRAVA_CLIENT_ID,
-          client_secret: STRAVA_CLIENT_SECRET,
-          code: code,
-          grant_type: 'authorization_code'
-        })
+        body: JSON.stringify({ code })
       });
 
-      const tokenData = await tokenResponse.json();
+      const data = await response.json();
       
-      if (tokenData.access_token) {
-        // Get athlete info
-        const athleteResponse = await fetch('https://www.strava.com/api/v3/athlete', {
-          headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`
-          }
-        });
-        
-        const athleteData = await athleteResponse.json();
-        setAthlete(athleteData);
-        setIsAuthenticated(true);
-        
-        // Check if this is Zach
-        if (athleteData.id === ZACH_ATHLETE_ID) {
-          setIsAuthorized(true);
-          addMessage('system', `Welcome back, ${athleteData.firstname}! You're authorized to generate new training plans.`);
-        } else {
-          setIsAuthorized(false);
-          addMessage('system', `AI Coaching updates are restricted. Only Zach can run this. You can still read previously published plans.`);
-        }
-
-        // Store token for API calls
-        sessionStorage.setItem('strava_token', tokenData.access_token);
-        
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+      if (!data.success || !data.access_token) {
+        throw new Error(data.error || 'Token exchange failed');
       }
+      
+      // Store athlete info and token
+      setAthlete(data.athlete);
+      setIsAuthenticated(true);
+      
+      // Check if this is Zach
+      if (data.athlete.id === ZACH_ATHLETE_ID) {
+        setIsAuthorized(true);
+        addMessage('system', `Welcome back, ${data.athlete.firstname}! You're authorized to generate new training plans.`);
+      } else {
+        setIsAuthorized(false);
+        addMessage('system', `AI Coaching updates are restricted. Only Zach can run this. You can still read previously published plans.`);
+      }
+
+      // Store token for API calls
+      sessionStorage.setItem('strava_token', data.access_token);
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
       addMessage('system', 'Error authenticating with Strava. Please try again.');
       console.error('Strava auth error:', error);
     }
-  }, [addMessage, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET]);
+  }, [addMessage]);
 
   const initiateStravaAuth = () => {
     if (!STRAVA_CLIENT_ID) {
@@ -315,114 +305,44 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
   };
 
   const callAnthropicAPI = async (analysisData: any): Promise<TrainingPlan | null> => {
-    if (!ANTHROPIC_API_KEY) {
-      addMessage('system', '⚠️ Anthropic API key not configured. Please check your environment variables.');
-      return null;
-    }
-
     try {
       addMessage('system', '🤖 Analyzing your data with AI...');
       
-      // Prepare the prompt for analysis
-      const prompt = `You are an expert running coach. Analyze the following data and create a personalized 7-day training plan.
-
-Recent Activities Data:
-${JSON.stringify(analysisData.recent_activities, null, 2)}
-
-User Goals: ${analysisData.user_goals}
-Constraints: ${analysisData.constraints}
-
-Please return a detailed JSON training plan with this exact structure:
-{
-  "plan": {
-    "week_overview": "Brief overview of the week's focus and approach",
-    "daily_schedule": [
-      {
-        "day": "Monday",
-        "workout_type": "Easy Run",
-        "description": "Detailed workout description",
-        "duration_minutes": 45,
-        "distance_miles": 6,
-        "intensity": "Easy",
-        "notes": "Additional notes"
-      }
-      // ... for all 7 days
-    ],
-    "key_sessions": ["List of key workout sessions for the week"],
-    "recovery_emphasis": "Recovery guidance",
-    "injury_prevention": ["List of injury prevention tips"]
-  },
-  "reasoning": {
-    "analysis_summary": "Summary of the athlete's current state",
-    "training_load_assessment": "Assessment of recent training load",
-    "goal_alignment": "How this plan aligns with stated goals",
-    "risk_factors": ["List of potential risk factors"],
-    "scientific_principles": ["Training principles applied"],
-    "adaptation_strategy": "How this plan promotes adaptation"
-  }
-}
-
-Focus on practical, evidence-based training principles. Consider the athlete's recent training load, goals, and constraints.`;
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // Use Netlify function for Anthropic API calls
+      const response = await fetch('/.netlify/functions/anthropic-generate-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 4000,
-          messages: [{
-            role: 'user',
-            content: prompt
-          }]
+          analysisData
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Anthropic API error:', errorData);
-        addMessage('system', '❌ AI service error. Using fallback plan.');
+        const errorData = await response.json();
+        console.error('Netlify function error:', errorData);
+        addMessage('system', `❌ AI service error: ${errorData.error || 'Unknown error'}`);
         return null;
       }
 
       const data = await response.json();
-      const content = data.content?.[0]?.text;
       
-      if (!content) {
-        addMessage('system', '❌ No content received from AI. Using fallback plan.');
+      if (!data.success || !data.plan) {
+        addMessage('system', '❌ Failed to generate AI plan. Using fallback plan.');
         return null;
       }
-
-      // Parse the JSON response
-      const jsonStart = content.indexOf('{');
-      const jsonEnd = content.lastIndexOf('}') + 1;
-      const jsonStr = content.slice(jsonStart, jsonEnd);
       
-      const planData = JSON.parse(jsonStr);
-      
-      // Create full plan object
-      const plan: TrainingPlan = {
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        athlete_id: analysisData.athlete_profile?.id || 0,
-        plan: planData.plan,
-        reasoning: planData.reasoning,
-        input_data: {
-          recent_activities: analysisData.recent_activities,
-          user_goals: analysisData.user_goals,
-          constraints: analysisData.constraints
-        }
-      };
-
       addMessage('system', '✅ AI analysis complete! Generated personalized plan.');
-      return plan;
+      return data.plan;
 
     } catch (error) {
-      console.error('Anthropic API error:', error);
-      addMessage('system', '❌ AI service error. Using fallback plan.');
+      console.error('AI service error:', error);
+      if (error instanceof Error && error.message.includes('fetch')) {
+        addMessage('system', '⚠️ Cannot connect to AI service. Make sure you\'re connected to the internet.');
+      } else {
+        addMessage('system', `❌ AI service error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
       return null;
     }
   };
