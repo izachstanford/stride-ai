@@ -94,11 +94,10 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const ZACH_ATHLETE_ID = 91375424;
-  const STRAVA_CLIENT_ID = process.env.REACT_APP_STRAVA_CLIENT_ID;
-  const STRAVA_CLIENT_SECRET = process.env.REACT_APP_STRAVA_CLIENT_SECRET;
-  const ANTHROPIC_API_KEY = process.env.REACT_APP_ANTHROPIC_API_KEY;
+  // Note: API keys now handled server-side via Netlify Functions
+  // No need to expose them in client-side bundle
   
-  // EmailJS and Google Calendar configuration
+  // EmailJS and Google Calendar configuration (client-side only)
   const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
   const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
   const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
@@ -163,16 +162,25 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
     }
   }, [addMessage]);
 
-  const initiateStravaAuth = () => {
-    if (!STRAVA_CLIENT_ID) {
-      addMessage('system', 'Strava integration is not configured. Please contact the developer.');
-      return;
+  const initiateStravaAuth = async () => {
+    try {
+      // Get Strava Client ID from Netlify function
+      const configResponse = await fetch('/.netlify/functions/strava-config');
+      const config = await configResponse.json();
+      
+      if (!config.client_id) {
+        addMessage('system', 'Strava integration is not configured. Please contact the developer.');
+        return;
+      }
+      
+      const scope = 'read,activity:read';
+      const redirectUri = encodeURIComponent(window.location.origin);
+      const authUrl = `https://www.strava.com/oauth/authorize?client_id=${config.client_id}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Failed to get Strava config:', error);
+      addMessage('system', 'Failed to initialize Strava authentication. Please try again.');
     }
-    
-    const scope = 'read,activity:read';
-    const redirectUri = encodeURIComponent(window.location.origin);
-    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
-    window.location.href = authUrl;
   };
 
   useEffect(() => {
