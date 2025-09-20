@@ -174,7 +174,7 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
       }
       
       const scope = 'read,activity:read';
-      const redirectUri = encodeURIComponent(window.location.origin);
+      const redirectUri = encodeURIComponent(`${window.location.origin}/stride-ai/`);
       const authUrl = `https://www.strava.com/oauth/authorize?client_id=${config.client_id}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
       window.location.href = authUrl;
     } catch (error) {
