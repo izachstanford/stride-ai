@@ -195,12 +195,12 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
       if (plans.length > 0) {
         const latestPlan = plans[plans.length - 1];
         setCurrentPlan(latestPlan);
-        addMessage('system', `🏃‍♂️ Welcome to StrideAI Coach! Previous training plan loaded from ${new Date(latestPlan.timestamp).toLocaleDateString()}. Tell me about your current goals or click the button to generate a fresh plan based on your latest Strava data.`);
+        addMessage('system', `🏃‍♂️ Welcome back to StrideAI Coach! Previous training plan loaded from ${new Date(latestPlan.timestamp).toLocaleDateString()}. Share your current goals in the chat, then click "Generate Plan" to create a fresh plan based on your latest Strava data.`);
       } else {
-        addMessage('system', `🏃‍♂️ Welcome to StrideAI Coach! I'm your AI running coach, ready to analyze your recent training and create personalized 7-day plans. Connect with Strava to get started, or tell me about your goals and constraints.`);
+        addMessage('system', `🏃‍♂️ Welcome to StrideAI Coach! I'm your AI running coach, ready to analyze your recent training and create personalized 7-day plans. Click "Authenticate with Strava" to get started, then share your goals in the chat.`);
       }
     } else {
-      addMessage('system', `🏃‍♂️ Welcome to StrideAI Coach! I'm your AI running coach, ready to analyze your recent training and create personalized 7-day plans. Connect with Strava to get started, or tell me about your goals and constraints.`);
+      addMessage('system', `🏃‍♂️ Welcome to StrideAI Coach! I'm your AI running coach, ready to analyze your recent training and create personalized 7-day plans. Click "Authenticate with Strava" to get started, then share your goals in the chat.`);
     }
   }, [addMessage]);
 
@@ -247,7 +247,7 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
     }
   };
 
-  const generateTrainingPlan = async (userGoals: string = '', constraints: string = '') => {
+  const generateTrainingPlan = async () => {
     if (!isAuthorized) {
       addMessage('system', 'Only Zach can generate new training plans.');
       return;
@@ -277,14 +277,24 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
 
       addMessage('system', 'Analyzing your data and generating a personalized 7-day plan...');
       
+      // Extract user goals and constraints from the entire conversation history
+      const conversationContext = messages
+        .filter(msg => msg.type === 'user')
+        .map(msg => msg.content)
+        .join(' ');
+      
       // Prepare comprehensive data for AI analysis
       const analysisData = {
         recent_activities: recentData,
         historical_races: data.races,
         historical_activities: data.activities,
-        user_goals: userGoals,
-        constraints: constraints,
-        athlete_profile: athlete
+        user_goals: conversationContext || 'General fitness and training',
+        constraints: conversationContext || '',
+        athlete_profile: athlete,
+        conversation_history: messages.filter(msg => msg.type === 'user').map(msg => ({
+          content: msg.content,
+          timestamp: msg.timestamp
+        }))
       };
 
       // Generate plan using Anthropic API
@@ -297,16 +307,19 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
         localStorage.setItem('stride_ai_plans', JSON.stringify(savedPlans));
         
         setCurrentPlan(plan);
-        addMessage('plan', 'New training plan generated!', plan);
+        addMessage('plan', 'Your personalized training plan is ready!', plan);
       } else {
         addMessage('system', '⚠️ AI plan generation failed. Generating personalized fallback plan...');
-        const fallbackPlan = createPersonalizedFallbackPlan(userGoals, constraints, analysisData.recent_activities);
+        const fallbackPlan = createPersonalizedFallbackPlan(conversationContext, conversationContext, analysisData.recent_activities);
         setCurrentPlan(fallbackPlan);
         addMessage('plan', 'Personalized fallback training plan generated!', fallbackPlan);
       }
     } catch (error) {
-      addMessage('system', 'Error generating training plan. Please try again.');
-      console.error('Plan generation error:', error);
+      addMessage('system', '❌ Error generating training plan. Showing sample plan instead.');
+      // Show demo plan on error
+      const demoplan = createDemoPlan();
+      setCurrentPlan(demoplan);
+      addMessage('plan', '📋 Sample Training Plan (Generated due to error - this is for demonstration purposes)', demoplan);
     } finally {
       setIsAnalyzing(false);
     }
@@ -360,9 +373,9 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
     
     addMessage('user', inputValue);
     
-    // Simple keyword-based responses for now
+    // More contextual responses
     if (inputValue.toLowerCase().includes('help')) {
-      addMessage('system', 'I can analyze your recent Strava data and create personalized training plans. Click "Analyze Last 4 Weeks" to get started, or tell me about your goals and constraints. Type "demo" to see a sample plan!');
+      addMessage('system', 'I can analyze your recent Strava data and create personalized training plans. Share your goals in the chat, then click "Generate Plan" to create your training plan.');
     } else if (inputValue.toLowerCase().includes('demo')) {
       // Demo mode - create a sample plan
       addMessage('system', '🎯 Generating demo training plan...');
@@ -370,7 +383,26 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
       setCurrentPlan(demoplan);
       addMessage('plan', 'Demo training plan generated! (This is a sample plan for demonstration purposes)', demoplan);
     } else {
-      addMessage('system', `Thanks for sharing: "${inputValue}". This will be considered when generating your next training plan.`);
+      // Acknowledge specific goals and provide contextual response
+      const goals = inputValue.toLowerCase();
+      let response = 'Got it! ';
+      
+      if (goals.includes('trail') && goals.includes('wednesday')) {
+        response += 'I see you want to do a trail run on Wednesday. ';
+      }
+      if (goals.includes('mile') && goals.includes('time trial') && goals.includes('friday')) {
+        response += 'And a mile time trial on Friday. ';
+      }
+      if (goals.includes('rest') && (goals.includes('tuesday') || goals.includes('thursday'))) {
+        response += 'I\'ll make sure to schedule rest days on Tuesday and Thursday. ';
+      }
+      if (goals.includes('trail run')) {
+        response += 'I\'ll prioritize trail runs in your plan. ';
+      }
+      
+      response += 'When you\'re ready, click "Generate Plan" to create a personalized training plan that incorporates these goals with your recent Strava data.';
+      
+      addMessage('system', response);
     }
     
     setInputValue('');
@@ -949,34 +981,22 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
           
           <div className="action-row">
             {!isAuthenticated ? (
-            <button onClick={initiateStravaAuth} className="strava-button">
-              Connect with Strava to Analyze Last 4 Weeks
-            </button>
+              <button onClick={initiateStravaAuth} className="strava-button">
+                Authenticate with Strava
+              </button>
             ) : (
               <button 
-                onClick={() => generateTrainingPlan(inputValue)} 
+                onClick={generateTrainingPlan} 
                 disabled={isAnalyzing}
                 className="analyze-button"
               >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Last 4 Weeks & Generate Plan'}
+                {isAnalyzing ? 'Generating Plan...' : 'Generate Plan'}
               </button>
             )}
-            
-            <button 
-              onClick={() => {
-                addMessage('system', 'Generating demo training plan...');
-                const demoplan = createDemoPlan();
-                setCurrentPlan(demoplan);
-                addMessage('plan', 'Demo training plan generated! (This is a sample plan for demonstration purposes)', demoplan);
-              }}
-              className="demo-button"
-            >
-              See Demo Plan
-            </button>
           </div>
           
           <div className="demo-notice">
-            💡 Only Zach is authorized to connect to Strava and chat with this coach but type "demo" to see a sample training plan.
+            💡 Only Zach is authorized to connect to Strava and chat with this coach. Share your goals in the chat, then click "Generate Plan" to create a personalized training plan.
           </div>
         </div>
       </div>
