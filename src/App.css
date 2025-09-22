@@ -1109,6 +1109,10 @@ body {
   gap: 2rem;
   margin-top: 2rem;
   min-height: 600px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 2rem;
 }
 
 .training-insights-panel {
@@ -1124,9 +1128,6 @@ body {
   margin-bottom: 1.5rem;
   font-size: 1.25rem;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .insights-content {
@@ -1191,9 +1192,6 @@ body {
   margin-bottom: 1.5rem;
   font-size: 1.25rem;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .chat-container {

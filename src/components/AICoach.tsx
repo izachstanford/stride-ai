@@ -154,6 +154,9 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
       // Store token for API calls
       sessionStorage.setItem('strava_token', data.access_token);
       
+      // Immediately fetch and populate training data
+      await fetchRecentActivities();
+      
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
@@ -983,7 +986,7 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
       <div className="dual-interface">
         {/* Left Panel - Training Insights (Public) */}
         <div className="training-insights-panel">
-          <h3>📊 Training Insights</h3>
+          <h3>Training Insights</h3>
           <div className="insights-content">
             {recentActivities.length > 0 ? (
               <div>
@@ -1010,7 +1013,6 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
             ) : (
               <div className="no-data">
                 <p>🔒 Training data will appear here after authentication</p>
-                <p>Anyone can view Zach's training insights once loaded!</p>
               </div>
             )}
           </div>
@@ -1018,7 +1020,7 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
 
         {/* Right Panel - AI Coach Chat (Public Demo) */}
         <div className="ai-coach-panel">
-          <h3>🤖 AI Coach Chat</h3>
+          <h3>AI Coach Chat</h3>
           <div className="chat-container">
             <div className="messages">
               {messages.map((message) => (
@@ -1080,7 +1082,7 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
               </div>
               
               <div className="demo-notice">
-                💡 Try the AI Coach! {isAuthenticated ? 'Generate personalized plans with your Strava data.' : 'Generate demo plans or share your own goals for a sample plan.'}
+                💡 {isAuthenticated ? 'Generate personalized plans with your Strava data.' : 'Generate a Demo Plan to see functionality of a personalized plan after authenticating with Strava.'}
               </div>
             </div>
           </div>
