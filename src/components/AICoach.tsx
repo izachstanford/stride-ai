@@ -985,52 +985,7 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
 
       {/* Dual Interface */}
       <div className={`dual-interface ${expandedPanel ? `expanded-${expandedPanel}` : ''}`}>
-        {/* Left Panel - Training Insights (Public) */}
-        <div className="training-insights-panel">
-          <div className="panel-header">
-            <h3>Training Insights</h3>
-            <div className="panel-controls">
-              <button 
-                onClick={() => setExpandedPanel(expandedPanel === 'insights' ? 'dual' : 'insights')}
-                className="expand-button"
-                title={expandedPanel === 'insights' ? 'Show both panels' : 'Expand insights panel'}
-              >
-                {expandedPanel === 'insights' ? '⤢' : '⤡'}
-              </button>
-            </div>
-          </div>
-          <div className="insights-content">
-            {recentActivities.length > 0 ? (
-              <div>
-                <TrainingSummaryChart activities={recentActivities} />
-                <div className="insights-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">Last 4 Weeks</span>
-                    <span className="stat-value">{recentActivities.length} runs</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Total Distance</span>
-                    <span className="stat-value">
-                      {Math.round(recentActivities.reduce((sum, activity) => sum + (activity.distance / 1609.34), 0))} miles
-                    </span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Avg Weekly</span>
-                    <span className="stat-value">
-                      {Math.round(recentActivities.reduce((sum, activity) => sum + (activity.distance / 1609.34), 0) / 4)} miles
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="no-data">
-                <p>🔒 Training data will appear here after authentication</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Panel - AI Coach Chat (Public Demo) */}
+        {/* Top Panel - AI Coach Chat (Public Demo) */}
         <div className="ai-coach-panel">
           <div className="panel-header">
             <h3>AI Coach Chat</h3>
@@ -1108,6 +1063,51 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
                 💡 {isAuthenticated ? 'Generate personalized plans with your Strava data.' : 'Generate a Demo Plan to see functionality of a personalized plan after authenticating with Strava.'}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Bottom Panel - Training Insights (Public) */}
+        <div className="training-insights-panel">
+          <div className="panel-header">
+            <h3>Training Insights</h3>
+            <div className="panel-controls">
+              <button 
+                onClick={() => setExpandedPanel(expandedPanel === 'insights' ? 'dual' : 'insights')}
+                className="expand-button"
+                title={expandedPanel === 'insights' ? 'Show both panels' : 'Expand insights panel'}
+              >
+                {expandedPanel === 'insights' ? '⤢' : '⤡'}
+              </button>
+            </div>
+          </div>
+          <div className="insights-content">
+            {recentActivities.length > 0 ? (
+              <div>
+                <TrainingSummaryChart activities={recentActivities} />
+                <div className="insights-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Last 4 Weeks</span>
+                    <span className="stat-value">{recentActivities.length} runs</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Total Distance</span>
+                    <span className="stat-value">
+                      {Math.round(recentActivities.reduce((sum, activity) => sum + (activity.distance / 1609.34), 0))} miles
+                    </span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Avg Weekly</span>
+                    <span className="stat-value">
+                      {Math.round(recentActivities.reduce((sum, activity) => sum + (activity.distance / 1609.34), 0) / 4)} miles
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="no-data">
+                <p>🔒 Training data will appear here after authentication</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

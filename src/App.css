@@ -1105,7 +1105,8 @@ body {
 
 .dual-interface {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
   gap: 2rem;
   margin-top: 2rem;
   min-height: 600px;
@@ -1117,11 +1118,11 @@ body {
 }
 
 .dual-interface.expanded-insights {
-  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
 }
 
 .dual-interface.expanded-chat {
-  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
 }
 
 .dual-interface.expanded-insights .training-insights-panel {
@@ -1259,7 +1260,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: 400px;
+  max-height: 600px;
 }
 
 .messages {
@@ -1297,7 +1299,6 @@ body {
 /* Responsive Design */
 @media (max-width: 1024px) {
   .dual-interface {
-    grid-template-columns: 1fr;
     gap: 1.5rem;
     padding: 0 1rem;
   }
@@ -1321,6 +1322,7 @@ body {
   .dual-interface {
     margin-top: 1rem;
     padding: 0 0.5rem;
+    gap: 1rem;
   }
   
   .training-insights-panel,
@@ -1356,7 +1358,7 @@ body {
   
   .dual-interface.expanded-insights,
   .dual-interface.expanded-chat {
-    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
   }
 }
 
