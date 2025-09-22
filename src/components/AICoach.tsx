@@ -91,6 +91,7 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
   const [currentPlan, setCurrentPlan] = useState<TrainingPlan | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [recentActivities, setRecentActivities] = useState<StravaActivity[]>([]);
+  const [expandedPanel, setExpandedPanel] = useState<'insights' | 'chat' | 'dual' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const ZACH_ATHLETE_ID = 91375424;
@@ -983,10 +984,21 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
       </div>
 
       {/* Dual Interface */}
-      <div className="dual-interface">
+      <div className={`dual-interface ${expandedPanel ? `expanded-${expandedPanel}` : ''}`}>
         {/* Left Panel - Training Insights (Public) */}
         <div className="training-insights-panel">
-          <h3>Training Insights</h3>
+          <div className="panel-header">
+            <h3>Training Insights</h3>
+            <div className="panel-controls">
+              <button 
+                onClick={() => setExpandedPanel(expandedPanel === 'insights' ? 'dual' : 'insights')}
+                className="expand-button"
+                title={expandedPanel === 'insights' ? 'Show both panels' : 'Expand insights panel'}
+              >
+                {expandedPanel === 'insights' ? '⤢' : '⤡'}
+              </button>
+            </div>
+          </div>
           <div className="insights-content">
             {recentActivities.length > 0 ? (
               <div>
@@ -1020,7 +1032,18 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
 
         {/* Right Panel - AI Coach Chat (Public Demo) */}
         <div className="ai-coach-panel">
-          <h3>AI Coach Chat</h3>
+          <div className="panel-header">
+            <h3>AI Coach Chat</h3>
+            <div className="panel-controls">
+              <button 
+                onClick={() => setExpandedPanel(expandedPanel === 'chat' ? 'dual' : 'chat')}
+                className="expand-button"
+                title={expandedPanel === 'chat' ? 'Show both panels' : 'Expand chat panel'}
+              >
+                {expandedPanel === 'chat' ? '⤢' : '⤡'}
+              </button>
+            </div>
+          </div>
           <div className="chat-container">
             <div className="messages">
               {messages.map((message) => (
