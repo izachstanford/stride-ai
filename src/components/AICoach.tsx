@@ -210,12 +210,24 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
     const code = urlParams.get('code');
     if (code) {
       handleStravaCallback(code);
+    } else {
+      // Load training data from localStorage for public viewing
+      fetchRecentActivities();
     }
   }, [handleStravaCallback]);
 
   const fetchRecentActivities = async () => {
     const token = sessionStorage.getItem('strava_token');
-    if (!token) return [];
+    if (!token) {
+      // Try to load from localStorage for public viewing
+      const savedActivities = localStorage.getItem('stride_ai_activities');
+      if (savedActivities) {
+        const activities = JSON.parse(savedActivities);
+        setRecentActivities(activities);
+        return activities;
+      }
+      return [];
+    }
 
     try {
       // Get activities from last 4 weeks
@@ -239,10 +251,21 @@ const AICoach: React.FC<AICoachProps> = ({ data }) => {
         activity.type === 'Run' || activity.type === 'TrailRun'
       );
 
+      // Save to localStorage for public persistence
+      localStorage.setItem('stride_ai_activities', JSON.stringify(runningActivities));
+      localStorage.setItem('stride_ai_activities_timestamp', new Date().toISOString());
+
       setRecentActivities(runningActivities);
       return runningActivities;
     } catch (error) {
       console.error('Error fetching activities:', error);
+      // Try to load from localStorage as fallback
+      const savedActivities = localStorage.getItem('stride_ai_activities');
+      if (savedActivities) {
+        const activities = JSON.parse(savedActivities);
+        setRecentActivities(activities);
+        return activities;
+      }
       return [];
     }
   };
@@ -943,60 +966,123 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
         <p>Get personalized training plans based on your recent Strava data</p>
       </div>
 
-      <div className="chat-container">
-        <div className="messages">
-          {messages.map((message) => (
-            <div key={message.id} className={`message ${message.type}`}>
-              <div className="message-content">
-                {message.type === 'plan' && message.plan ? (
-                  renderPlan(message.plan)
-                ) : message.content === 'training-summary-chart' ? (
-                  <TrainingSummaryChart activities={recentActivities} />
-                ) : (
-                  <p>{message.content}</p>
-                )}
-              </div>
-              <div className="message-time">
-                {new Date(message.timestamp).toLocaleTimeString()}
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <div className="chat-controls">
-          <div className="input-row">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Tell me about your goals, constraints, or questions..."
-              className="chat-input"
-            />
-            <button onClick={handleSendMessage} className="send-button">
-              Send
-            </button>
+      {/* Authentication Button */}
+      <div className="auth-section">
+        {!isAuthenticated ? (
+          <button onClick={initiateStravaAuth} className="strava-button">
+            Authenticate with Strava
+          </button>
+        ) : (
+          <div className="auth-success">
+            ✅ Authenticated! Training data loaded and AI Coach ready.
           </div>
-          
-          <div className="action-row">
-            {!isAuthenticated ? (
-              <button onClick={initiateStravaAuth} className="strava-button">
-                Authenticate with Strava
-              </button>
+        )}
+      </div>
+
+      {/* Dual Interface */}
+      <div className="dual-interface">
+        {/* Left Panel - Training Insights (Public) */}
+        <div className="training-insights-panel">
+          <h3>📊 Training Insights</h3>
+          <div className="insights-content">
+            {recentActivities.length > 0 ? (
+              <div>
+                <TrainingSummaryChart activities={recentActivities} />
+                <div className="insights-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Last 4 Weeks</span>
+                    <span className="stat-value">{recentActivities.length} runs</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Total Distance</span>
+                    <span className="stat-value">
+                      {Math.round(recentActivities.reduce((sum, activity) => sum + (activity.distance / 1609.34), 0))} miles
+                    </span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Avg Weekly</span>
+                    <span className="stat-value">
+                      {Math.round(recentActivities.reduce((sum, activity) => sum + (activity.distance / 1609.34), 0) / 4)} miles
+                    </span>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <button 
-                onClick={generateTrainingPlan} 
-                disabled={isAnalyzing}
-                className="analyze-button"
-              >
-                {isAnalyzing ? 'Generating Plan...' : 'Generate Plan'}
-              </button>
+              <div className="no-data">
+                <p>🔒 Training data will appear here after authentication</p>
+                <p>Anyone can view Zach's training insights once loaded!</p>
+              </div>
             )}
           </div>
-          
-          <div className="demo-notice">
-            💡 Only Zach is authorized to connect to Strava and chat with this coach. Share your goals in the chat, then click "Generate Plan" to create a personalized training plan.
+        </div>
+
+        {/* Right Panel - AI Coach Chat (Public Demo) */}
+        <div className="ai-coach-panel">
+          <h3>🤖 AI Coach Chat</h3>
+          <div className="chat-container">
+            <div className="messages">
+              {messages.map((message) => (
+                <div key={message.id} className={`message ${message.type}`}>
+                  <div className="message-content">
+                    {message.type === 'plan' && message.plan ? (
+                      renderPlan(message.plan)
+                    ) : message.content === 'training-summary-chart' ? (
+                      <TrainingSummaryChart activities={recentActivities} />
+                    ) : (
+                      <p>{message.content}</p>
+                    )}
+                  </div>
+                  <div className="message-time">
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="chat-controls">
+              <div className="input-row">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Tell me about your goals, constraints, or questions..."
+                  className="chat-input"
+                />
+                <button onClick={handleSendMessage} className="send-button">
+                  Send
+                </button>
+              </div>
+              
+              <div className="action-row">
+                {isAuthenticated ? (
+                  <button 
+                    onClick={generateTrainingPlan} 
+                    disabled={isAnalyzing}
+                    className="analyze-button"
+                  >
+                    {isAnalyzing ? 'Generating Plan...' : 'Generate Plan'}
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      addMessage('system', '🎯 Generating demo training plan...');
+                      const demoplan = createDemoPlan();
+                      setCurrentPlan(demoplan);
+                      addMessage('plan', 'Demo training plan generated! (This is a sample plan for demonstration purposes)', demoplan);
+                    }}
+                    className="demo-button"
+                  >
+                    Generate Demo Plan
+                  </button>
+                )}
+              </div>
+              
+              <div className="demo-notice">
+                💡 Try the AI Coach! {isAuthenticated ? 'Generate personalized plans with your Strava data.' : 'Generate demo plans or share your own goals for a sample plan.'}
+              </div>
+            </div>
           </div>
         </div>
       </div>
