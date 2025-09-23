@@ -1027,7 +1027,7 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Tell me about your goals, constraints, or questions..."
+                  placeholder="Tell me about your goals"
                   className="chat-input"
                 />
                 <button onClick={handleSendMessage} className="send-button">
@@ -1036,31 +1036,22 @@ ${workout.notes ? `Notes: ${workout.notes}` : ''}
               </div>
               
               <div className="action-row">
-                {isAuthenticated ? (
-                  <button 
-                    onClick={generateTrainingPlan} 
-                    disabled={isAnalyzing}
-                    className="analyze-button"
-                  >
-                    {isAnalyzing ? 'Generating Plan...' : 'Generate Plan'}
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => {
-                      addMessage('system', '🎯 Generating demo training plan...');
+                <button 
+                  onClick={() => {
+                    if (isAuthenticated) {
+                      generateTrainingPlan();
+                    } else {
+                      addMessage('system', '🎯 Generating demo training plan (authenticate with Strava to generate a personalized plan)...');
                       const demoplan = createDemoPlan();
                       setCurrentPlan(demoplan);
-                      addMessage('plan', 'Demo training plan generated! (This is a sample plan for demonstration purposes)', demoplan);
-                    }}
-                    className="demo-button"
-                  >
-                    Generate Demo Plan
-                  </button>
-                )}
-              </div>
-              
-              <div className="demo-notice">
-                💡 {isAuthenticated ? 'Generate personalized plans with your Strava data.' : 'Generate a Demo Plan to see functionality of a personalized plan after authenticating with Strava.'}
+                      addMessage('plan', 'Demo training plan generated! (This is a sample because you have not authenticated yet)', demoplan);
+                    }
+                  }} 
+                  disabled={isAnalyzing}
+                  className="analyze-button"
+                >
+                  {isAnalyzing ? 'Generating Plan...' : 'Generate Plan'}
+                </button>
               </div>
             </div>
           </div>
