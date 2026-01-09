@@ -40,7 +40,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
     const runningActivities = data.activities
       .filter(act => {
         const activityDate = parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date());
-        return activityDate.getFullYear() >= 2016 && isRunningActivity(act['Activity Type']); // Only include 2016 and later
+        return activityDate.getFullYear() >= 2016 && activityDate.getFullYear() <= 2025 && isRunningActivity(act['Activity Type']); // Exclude incomplete 2026
       });
     
     const totalRuns = runningActivities.length;
@@ -82,7 +82,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
   const fitnessStats = useMemo(() => {
     const allActivities = data.activities.filter(act => {
       const activityDate = parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date());
-      return activityDate.getFullYear() >= 2016; // Only include 2016 and later
+      return activityDate.getFullYear() >= 2016 && activityDate.getFullYear() <= 2025; // Exclude incomplete 2026
     });
     
     const totalActivities = allActivities.length;
@@ -116,7 +116,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
         date: parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date()),
         distance: act['Distance.1'] ? (act['Distance.1'] / 1609.34) : (parseFloat(act.Distance) || 0)
       }))
-      .filter(act => act.date.getFullYear() >= 2016); // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025); // Exclude incomplete 2026
 
     const yearlyData = new Map();
     runningActivities.forEach(act => {
@@ -143,7 +143,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
         date: parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date()),
         hours: (act['Moving Time'] || 0) / 3600
       }))
-      .filter(act => act.date.getFullYear() >= 2016); // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025); // Exclude incomplete 2026
 
     const yearlyData = new Map();
     
@@ -208,7 +208,7 @@ const ThePulse: React.FC<ThePulseProps> = ({ data }) => {
         .filter(race => {
           if (!race.distance || race.distance !== distance || !race.time || !race.date) return false;
           const raceDate = new Date(race.date);
-          return raceDate.getFullYear() >= 2016; // Only include 2016 and later
+          return raceDate.getFullYear() >= 2016 && raceDate.getFullYear() <= 2025; // Exclude incomplete 2026
         })
         .map(race => ({
           ...race,

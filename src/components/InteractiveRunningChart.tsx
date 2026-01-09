@@ -19,7 +19,28 @@ const InteractiveRunningChart: React.FC<InteractiveRunningChartProps> = ({
   onYearChange 
 }) => {
   const [drillDownLevel, setDrillDownLevel] = useState<DrillDownLevel>(initialLevel);
-  const [selectedYearInternal, setSelectedYearInternal] = useState<number>(selectedYear || new Date().getFullYear());
+  // Helper to get default year (max available year <= 2025)
+  const getDefaultYear = () => {
+    const years = new Set<number>();
+    data.activities
+      .filter(act => {
+        const activityType = act['Activity Type'] || '';
+        return activityType.toLowerCase().includes('run') && 
+               !activityType.toLowerCase().includes('walk') && 
+               !activityType.toLowerCase().includes('hike');
+      })
+      .forEach(act => {
+        const date = parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date());
+        const year = date.getFullYear();
+        if (year >= 2016 && year <= 2025) {
+          years.add(year);
+        }
+      });
+    const validYears = Array.from(years).sort((a, b) => b - a); // Descending
+    return validYears.length > 0 ? validYears[0] : 2025; // Most recent complete year
+  };
+  
+  const [selectedYearInternal, setSelectedYearInternal] = useState<number>(selectedYear || getDefaultYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<{weekStart: Date, weekIndex: number} | null>(null);
 
@@ -58,7 +79,7 @@ const InteractiveRunningChart: React.FC<InteractiveRunningChartProps> = ({
       .forEach(act => {
         const date = parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date());
         const year = date.getFullYear();
-        if (year >= 2016) { // Only include 2016 and later
+        if (year >= 2016 && year <= 2025) { // Exclude incomplete 2026
           years.add(year);
         }
       });
@@ -78,7 +99,7 @@ const InteractiveRunningChart: React.FC<InteractiveRunningChartProps> = ({
         hours: (act['Moving Time'] || 0) / 3600,
         isTrail: isTrailRun(act)
       }))
-      .filter(act => act.date.getFullYear() >= 2016); // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025); // Exclude incomplete 2026
 
     const yearlyStats = [];
     
@@ -872,7 +893,7 @@ const InteractiveRunningChart: React.FC<InteractiveRunningChartProps> = ({
       setSelectedMonth(null);
     } else if (drillDownLevel === 'months') {
       setDrillDownLevel(initialLevel);
-      setSelectedYearInternal(selectedYear || new Date().getFullYear()); // Reset to initial year if external
+      setSelectedYearInternal(selectedYear || getDefaultYear()); // Reset to initial year if external
       setSelectedMonth(null);
     }
   };
