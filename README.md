@@ -54,6 +54,29 @@ Open [http://localhost:3000](http://localhost:3000) - the app will auto-reload o
 node test-apis.js
 ```
 
+### Updating Activity Data
+To update the app with a new Strava export:
+
+1. Export your data from Strava (Settings → My Account → Get Started → Export or Delete Your Account → Request Your Archive)
+2. Extract the export and locate the `activities.csv` file
+3. Run the update script with the path to your CSV:
+   ```bash
+   npm run update-data [path-to-activities.csv]
+   ```
+   
+   Or use the default path (if your export is at `/Users/zachstanford/Downloads/export_91375424 (2)/activities.csv`):
+   ```bash
+   npm run update-data
+   ```
+
+The script will:
+- Parse the CSV file and convert it to the required JSON format
+- Update `public/data/activities_mapped.json` (used in development)
+- Update `build/data/activities_mapped.json` (used in production builds)
+- Preserve all activity fields needed by the app components
+
+**Note:** The script currently expects the CSV at `/Users/zachstanford/Downloads/export_91375424 (2)/activities.csv`. Update the `csvPath` variable in `update-activities-data.js` if your export is in a different location.
+
 ## Build & Deploy
 ```bash
 npm run build    # Creates optimized production build

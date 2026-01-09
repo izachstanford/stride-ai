@@ -10,7 +10,33 @@ interface SeasonStatsProps {
 }
 
 const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  // Helper function to get valid years (2016-2025, excluding incomplete 2026)
+  const getValidYears = () => {
+    const years = new Set<number>();
+    data.activities
+      .filter(act => {
+        const activityType = act['Activity Type'] || '';
+        return activityType.toLowerCase().includes('run') && 
+               !activityType.toLowerCase().includes('walk') && 
+               !activityType.toLowerCase().includes('hike');
+      })
+      .forEach(act => {
+        const date = parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date());
+        const year = date.getFullYear();
+        if (year >= 2016 && year <= 2025) { // Exclude incomplete 2026
+          years.add(year);
+        }
+      });
+    return Array.from(years).sort((a, b) => a - b);
+  };
+  
+  // Get default year (most recent complete year, max 2025)
+  const getDefaultYear = () => {
+    const validYears = getValidYears();
+    return validYears.length > 0 ? validYears[validYears.length - 1] : 2025;
+  };
+  
+  const [selectedYear, setSelectedYear] = useState(() => getDefaultYear());
   const [drillDownLevel, setDrillDownLevel] = useState<'months' | 'weeks' | 'days'>('months');
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<{ weekStart: Date; weekIndex: number } | null>(null);
@@ -94,19 +120,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
     return pace;
   };
 
-  const availableYears = useMemo(() => {
-    const years = new Set<number>();
-    data.activities
-      .filter(act => isRunningActivity(act['Activity Type']))
-      .forEach(act => {
-        const date = parse(act['Activity Date'], 'MMM dd, yyyy, h:mm:ss a', new Date());
-        const year = date.getFullYear();
-        if (year >= 2016) { // Only include 2016 and later
-          years.add(year);
-        }
-      });
-    return Array.from(years).sort((a, b) => a - b); // Chronological order (oldest first)
-  }, [data.activities]);
+  const availableYears = useMemo(() => getValidYears(), [data.activities]);
 
   // Running-focused stats
   const runningStats = useMemo(() => {
@@ -122,7 +136,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
         hours: (act['Moving Time'] || 0) / 3600,
         isTrail: isTrailRun(act)
       }))
-      .filter(act => act.date.getFullYear() >= 2016) // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025) // Exclude incomplete 2026
       .filter(act => isWithinInterval(act.date, { start: yearStart, end: yearEnd }));
 
     const totalRuns = yearActivities.length;
@@ -222,7 +236,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
         distance: act['Distance.1'] ? (act['Distance.1'] / 1609.34) : (parseFloat(act.Distance) || 0),
         hours: (act['Moving Time'] || 0) / 3600
       }))
-      .filter(act => act.date.getFullYear() >= 2016) // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025) // Exclude incomplete 2026
       .filter(act => isWithinInterval(act.date, { start: yearStart, end: yearEnd }));
 
     const totalActivities = allYearActivities.length;
@@ -259,7 +273,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
         hours: (act['Moving Time'] || 0) / 3600,
         isTrail: isTrailRun(act)
       }))
-      .filter(act => act.date.getFullYear() >= 2016) // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025) // Exclude incomplete 2026
       .filter(act => isWithinInterval(act.date, { start: yearStart, end: yearEnd }));
 
     const allActivities = data.activities
@@ -269,7 +283,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
         distance: act['Distance.1'] ? (act['Distance.1'] / 1609.34) : (parseFloat(act.Distance) || 0),
         hours: (act['Moving Time'] || 0) / 3600
       }))
-      .filter(act => act.date.getFullYear() >= 2016) // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025) // Exclude incomplete 2026
       .filter(act => isWithinInterval(act.date, { start: yearStart, end: yearEnd }));
 
     const monthlyStats = [];
@@ -340,7 +354,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
         hours: (act['Moving Time'] || 0) / 3600,
         isTrail: isTrailRun(act)
       }))
-      .filter(act => act.date.getFullYear() >= 2016) // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025) // Exclude incomplete 2026
       .filter(act => isWithinInterval(act.date, { start: monthStart, end: monthEnd }));
 
     return weeks.map((weekStart, index) => {
@@ -398,7 +412,7 @@ const SeasonStats: React.FC<SeasonStatsProps> = ({ data }) => {
         hours: (act['Moving Time'] || 0) / 3600,
         isTrail: isTrailRun(act)
       }))
-      .filter(act => act.date.getFullYear() >= 2016) // Only include 2016 and later
+      .filter(act => act.date.getFullYear() >= 2016 && act.date.getFullYear() <= 2025) // Exclude incomplete 2026
       .filter(act => isWithinInterval(act.date, { start: selectedWeek.weekStart, end: weekEnd }));
 
     return days.map((day) => {

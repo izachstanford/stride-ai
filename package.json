@@ -29,7 +29,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "node deploy-to-website.js",
-    "deploy:dry": "echo 'Dry run - would deploy to aiwithzach.com/stride-ai/' && npm run build"
+    "deploy:dry": "echo 'Dry run - would deploy to aiwithzach.com/stride-ai/' && npm run build",
+    "update-data": "node update-activities-data.js"
   },
   "eslintConfig": {
     "extends": [
